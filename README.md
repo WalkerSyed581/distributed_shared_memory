@@ -14,5 +14,5 @@ There are three ways to tackle the division of data which are:
 * Object-based DSM
 * Variable-based DSM
 
-In our case we will be going with using either Object-based or Variable-based. Both of these techniques require modern compilers and programs which do not just worked like old programs focusing on the pages in the memory.
+In our case we will be going with using Object-based DSM as it will be quite general and will allow the subscribers to pass in data of any kind in the form of objects which will be passed on to the main object-based memory where the storage place will be decided.
 
