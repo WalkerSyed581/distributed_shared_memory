@@ -10,20 +10,17 @@ class MemoryManager:
     def __init__(self):
         self.shared_vars = {}
 
-    def store_accessed_var(self, shared_var):
+    def store_shared_var(self, shared_var):
         """
-        This method will take the variable that the user tried to access 
         """
         pass
 
     def remove_var(self,shared_var):
         """
-        This method will remove the given variable from the list of the variables that
-        have been accessed for read replication
         """
         pass
 
-    def grant_write_acess(self):
+    def grant_write_acess(self,shared_var):
         """
         This will allow the user to change the variable and also contact the arbiter to
         send the changes when done

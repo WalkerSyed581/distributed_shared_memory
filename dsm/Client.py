@@ -8,17 +8,17 @@ two classes.
 """
 
 class Client:
-
     def __init__(self):
-        pass
+        subscribe()
 
     def subscribe(self):
+        
+        
+
+    def set_as_shared(self,var):
         pass
 
-    def set_as_shared(self):
-        pass
-
-    def remove_shared_status(self):
+    def remove_shared_status(self,var):
         pass
 
     def get_var(self,shared_var):
@@ -32,6 +32,12 @@ class Client:
         """
         This method gets the variable from the server to allow the node to be able to 
         change it for at the server level
+        """
+        pass
+
+    def get_all_shared_var(self):
+        """
+
         """
         pass
 
