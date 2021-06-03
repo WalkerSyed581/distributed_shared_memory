@@ -12,7 +12,7 @@ class Client:
         subscribe()
 
     def subscribe(self):
-        
+        pass
         
 
     def set_as_shared(self,var):

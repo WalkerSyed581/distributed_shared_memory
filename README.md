@@ -21,5 +21,9 @@ Following is the protocol that our Client-Arbiter communication will follow:
 | Purpose        | msg_id      | req_syntax   | res_syntax           |
 | -------------- | ----------- | ------------ | -------------------- |
 | Subscribe      | 0           | 0&#124;      | 0&#124;node_id       |
-| Set Shared     | 1           | 1&#124;node_id&#124;var_name&#124;ser_value | 1&#124;node_id |
-
+| Set Shared Var    | 1           | 1&#124;node_id&#124;var_name&#124;ser_value | 1&#124;node_id |
+| Revoke Shared Var | 2 | 2&#124;node_id&#124;var_name | 2&#124;node_id |
+| Get Shared Var | 3 | 3&#124;node_id&#124;target_node_id&#124;var_name | 3&#124;node_id&#124;var_val |
+| Get List of Shared Vars | 4 | 4&#124;node_id | 4&#124;node_id&#124;serialized_obj |
+| Get Write Access | 5 | 5&#124;node_id&#124;target_node_id&#124;var_name | 5&#124;node_id/err_code |
+| Check Write Access | 6 | 6&#124;node_id&#124;target_node_id&#124;var_name | 6&#124;node_id/err_code |
