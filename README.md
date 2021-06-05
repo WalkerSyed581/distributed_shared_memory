@@ -18,9 +18,9 @@ In our case we will be going with using Object-based DSM as it will be quite gen
 
 Following is the protocol that our Client-Arbiter communication will follow:
 
-| Purpose        | msg_id      | req_syntax   | res_syntax           |
+| Request Purpose        | Message ID      | Request Syntax   | Response Syntax           |
 | -------------- | ----------- | ------------ | -------------------- |
-| Subscribe      | 0           | 0&#124;      | 0&#124;node_id       |
+| Subscribe to network      | 0           | 0&#124;      | 0&#124;node_id       |
 | Set Shared Var    | 1           | 1&#124;node_id&#124;var_name&#124;ser_value | 1&#124;node_id |
 | Revoke Shared Var | 2 | 2&#124;node_id&#124;var_name | 2&#124;node_id |
 | Get Shared Var | 3 | 3&#124;node_id&#124;target_node_id&#124;var_name | 3&#124;node_id&#124;var_val |
