@@ -1,2 +1,12 @@
-test_str = "0|"
-print(test_str.split("|"))
+import pickle
+
+
+if __name__ == "__main__":
+    myObj = {"0" : [1,2,3]}
+    myObj = pickle.dump(myObj)
+
+    print(myObj)
+
+    myObj = pickle.load(myObj)
+
+    print(myObj["0"])

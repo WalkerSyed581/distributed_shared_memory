@@ -1,5 +1,15 @@
 # CS332 - Distributed Computing
-The aim is to implement a read replication based Distributed Shared Memory in Python which allows other Python programs to simply import and sue it as required. Following are the various design specifications that need to be considered:
+The aim is to implement a read replication based Distributed Shared Memory in Python which allows other Python programs to simply import and sue it as required.
+
+## Dependencies
+This project requires installing the following modules:
+
+### Python-varname:
+```shell
+pip install -U varname
+    ```
+
+Following are the various design specifications that need to be considered:
 
 * DSM Algorithm
 * Dsitribtuion and Access of Data
@@ -18,7 +28,7 @@ In our case we will be going with using Object-based DSM as it will be quite gen
 
 Following is the protocol that our Client-Arbiter communication will follow:
 
-| Request Purpose        | Message ID      | Request Syntax   | Response Syntax           | Error Response 
+| Request Purpose        | Message ID      | Request Syntax   | Response Syntax           | Error Response | 
 | -------------- | ----------- | ------------ | -------------------- |--------------- |
 | Subscribe to network      | 0           | 0&#124;      | 0&#124;node_id       | -1&#124;err_msg |
 | Set Shared Var    | 1           | 1&#124;node_id&#124;var_name&#124;ser_value | 1&#124;node_id | // |
@@ -27,4 +37,13 @@ Following is the protocol that our Client-Arbiter communication will follow:
 | Get List of Shared Vars | 4 | 4&#124;node_id | 4&#124;node_id&#124;serialized_obj | // |
 | Get Write Access | 5 | 5&#124;node_id&#124;target_node_id&#124;var_name | 5&#124;node_id | // |
 | Check Write Access | 6 | 6&#124;node_id&#124;target_node_id&#124;var_name | 6&#124;node_id | // |
-| Revoke Write Access | 7 | 7&#124;node_id&#124;target_node_id&#124;var_name | // |
+| Revoke Write Access | 7 | 7&#124;node_id&#124;target_node_id&#124;var_name | 6&#124;node_id | // |
+
+Following is the various instructions and the protocol that Arbiter-Client communication will follow:
+
+| Request Purpose | Message ID  | Request Syntax | Response Syntax | Error Response |
+| --------------  | ----------- | ------------   | --------------- |--------------- |
+| Halt Read       | 0 | 0&#124;node_id&#124;target_node_id&#124;var_name | 0&#124;node_id&#124;target_node_id | -1&#124;err_msg |
+| Update Variable Metadata    | 1 | 1&#124;node_id&#124;ser_value | None | // |
+
+
