@@ -57,7 +57,6 @@ class Client:
             self.__parse_incoming_request(request)
         connection.close()
 
-        
     def __listen(self):
         self.listen_sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         try:
@@ -70,8 +69,6 @@ class Client:
         while True:
             server, address = self.listen_sock.accept()
             start_new_thread(self.__threaded_client_listen,(server, ))
-
-
 
     def __send_message(self,encoded_message):
         self.client_sock.send(encoded_message)
@@ -152,8 +149,9 @@ class Client:
         
         return message
 
-    def set_as_shared(self,var):
-        pass
+    def set_as_shared(self,var_name,value):
+        self.__send_message(self.__create_message(1,{node_id:self.node_id,}))
+
 
     def remove_shared_status(self,var):
         pass

@@ -1,12 +1,8 @@
-import pickle
+from varname import varname, nameof
 
+def main(var):
+    print(nameof(var))
 
 if __name__ == "__main__":
-    myObj = {"0" : [1,2,3]}
-    myObj = pickle.dump(myObj)
-
-    print(myObj)
-
-    myObj = pickle.load(myObj)
-
-    print(myObj["0"])
+    bro = 123
+    main(bro)

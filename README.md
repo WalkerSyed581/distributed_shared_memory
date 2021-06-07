@@ -7,7 +7,7 @@ This project requires installing the following modules:
 ### Python-varname:
 ```shell
 pip install -U varname
-    ```
+```
 
 Following are the various design specifications that need to be considered:
 
