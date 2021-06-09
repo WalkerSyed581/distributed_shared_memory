@@ -36,7 +36,7 @@ Following is the protocol that our Client-Arbiter communication will follow:
 | Get Shared Var | 3 | 3&#124;node_id&#124;target_node_id&#124;var_name | 3&#124;node_id&#124;var_val | // |
 | Get List of Shared Vars | 4 | 4&#124;node_id | 4&#124;node_id&#124;serialized_obj | // |
 | Get Write Access | 5 | 5&#124;node_id&#124;target_node_id&#124;var_name | 5&#124;node_id | // |
-| Check Write Access | 6 | 6&#124;node_id&#124;target_node_id&#124;var_name | 6&#124;node_id | // |
+| Check Write Access | 6 | 6&#124;node_id&#124;target_node_id&#124;var_name | 6&#124;node_id&#124;0/1 | // |
 | Revoke Write Access | 7 | 7&#124;node_id&#124;target_node_id&#124;var_name | 6&#124;node_id | // |
 
 Following is the various instructions and the protocol that Arbiter-Client communication will follow:

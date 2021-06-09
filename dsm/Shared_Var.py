@@ -35,3 +35,5 @@ class Shared_Var():
         """
         self._value = value      
     
+    def set_can_write(self,node_id,can_write):
+        self._can_write = can_write
