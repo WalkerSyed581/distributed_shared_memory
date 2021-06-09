@@ -3,6 +3,7 @@ from _thread import *
 import socket
 import threading
 import json
+from Shared_Var import Shared_Var
 
 """
 The client side is the part of the network that requests and subscribes to the network
@@ -17,8 +18,8 @@ class Client:
     def __init__(self):
         """
         Metadata structure : {node_id: [variable_names]}
-        Read Replicated Vars structure: {node_id: {variable_names : value}}
-        Write Replicated Vars structure: {node_id: [variable_names]}
+        Read Replicated Vars structure: {node_id: {variable_names : Shared_Var}}
+        Client Shared Vars structure: {var_name: Shared_Var...}
         """
         self.client_sock = None
         self.listen_sock = None
@@ -27,7 +28,6 @@ class Client:
         self.metadata = self.get_all_shared_var()
         self.client_shared_vars = None
         self.read_replicated_vars = None
-        self.write_accessed = None
         self.listen_thread = threading.Thread(target=self.__listen)
 
     def subscribe(self):
@@ -83,11 +83,21 @@ class Client:
         elif msg_type == 0:
             return int(response[1])
         elif msg_type == 1:
+            if self.node_id == int(response[1]):
+                return self.node_id
             
+            return None
         elif msg_type == 2:
-
+            if self.node_id == int(response[1]):
+                return self.node_id
+            
+            return None
         elif msg_type == 3:
-
+            if self.node_id == int(response[1]):
+                var_value = json.load(response[2])
+                return var_value
+            
+            return None
         elif msg_type == 4:
             if response[2] == '':
                 print("No vairables have been shared")
@@ -96,7 +106,7 @@ class Client:
                 return json.load(response[2])
             
         elif msg_type == 5:
-
+            
         elif msg_type == 6:
 
         elif msg_type == 7:
@@ -122,7 +132,7 @@ class Client:
     # When another client requests write access to a variable read replicated by this one
     def __halt_read(self,target_node_id,var_name):
         if target_node_id in self.read_replicated_vars and 
-            request[3] in self.read_replicated_vars[target_node_id]:
+            var_name in self.read_replicated_vars[target_node_id]:
             self.read_replicated_vars[target_node_id].pop(var_name)
 
     def __update_metadata(self,json_string):
@@ -133,7 +143,7 @@ class Client:
         if message_id == 0:
             message = "0"
         elif message_id == 1:
-            message = "1|{}|{}|{}".format(str(args.node_id),str(args.var_name),str(args.value))
+            message = "1|{}|{}".format(str(args.node_id),json.dump({var_name: var_name,value:value}))
         elif message_id == 2:
             message = "2|{}|{}".format(str(args.node_id),str(args.var_name))
         elif message_id == 3:
@@ -150,25 +160,56 @@ class Client:
         return message
 
     def set_as_shared(self,var_name,value):
-        self.__send_message(self.__create_message(1,{node_id:self.node_id,}))
+        self.__send_message(self.__create_message(1,{node_id:self.node_id,var_name:var_name,value:value}))
+        recv_data = self.client_sock.recv(1024)
+        if not recv_data:
+           print("Unable to connect")
+
+        node_id = self.__parse_response(response)
+        if node_id != None
+            self.client_shared_vars[var_name] = Shared_Var(var_name,value)
 
 
     def remove_shared_status(self,var):
-        pass
+        self.__send_message(self.__create_message(2,{node_id:self.node_id,var_name:var_name}))
+        recv_data = self.client_sock.recv(1024)
+        if not recv_data:
+           print("Unable to connect")
 
-    def get_var(self,shared_var):
+        node_id = self.__parse_response(response)
+        if node_id != None
+            self.client_shared_vars.pop(var_name)
+
+
+    def get_var(self,target_node_id,var_name):
         """
         This method gets a single variable from the ones that have been shared to the 
         server for reading
         """
-        pass
+        self.__send_message(self.__create_message(3,{node_id:self.node_id,target_node_id:target_node_id,var_name:var_name}))
+        recv_data = self.client_sock.recv(1024)
+        if not recv_data:
+           print("Unable to connect")
+
+        var_value = self.__parse_response(response)
+        if node_id != None and var_name in var_value:
+            self.read_replicated_vars.target_node_id.append(Shared_Var(var_name,var_value))
+
 
     def get_write_access(self,shared_var):
         """
         This method gets the variable from the server to allow the node to be able to 
         change it for at the server level
         """
-        pass
+        self.__send_message(self.__create_message(5,{node_id:self.node_id,target_node_id:target_node_id,var_name:var_name}))
+        recv_data = self.client_sock.recv(1024)
+        if not recv_data:
+           print("Unable to connect")
+
+        var_value = self.__parse_response(response)
+        if node_id != None and var_name in var_value:
+            self.read_replicated_vars.target_node_id.append(Shared_Var(var_name,var_value))
+
 
     def revoke_write_access(self,shared_var):
         pass
