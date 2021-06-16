@@ -3,13 +3,18 @@ class Shared_Var():
     """
     docstring
     """
-    def __init__(self,var_name,value):
+    def __init__(self,var_name,value,node_id):
         """
         docstring
         """
         self._var_name = var_name
         self._value = value
         self._can_write = False
+        self._node_id = node_id
+        
+
+    def get_node_id(self):
+        return self._node_id
         
     def get_var_name(self):
         """

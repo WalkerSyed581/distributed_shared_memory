@@ -26,7 +26,7 @@ There are three ways to tackle the division of data which are:
 
 In our case we will be going with using Object-based DSM as it will be quite general and will allow the subscribers to pass in data of any kind in the form of objects which will be passed on to the main object-based memory where the storage place will be decided.
 
-Following is the protocol that our Client-Arbiter communication will follow:
+Following is the protocol that our Client-Server communication will follow:
 
 | Request Purpose        | Message ID      | Request Syntax   | Response Syntax           | Error Response | 
 | -------------- | ----------- | ------------ | -------------------- |--------------- |
@@ -39,7 +39,7 @@ Following is the protocol that our Client-Arbiter communication will follow:
 | Check Write Access | 6 | 6&#124;node_id&#124;target_node_id&#124;var_name | 6&#124;node_id&#124;0/1 | // |
 | Revoke Write Access | 7 | 7&#124;node_id&#124;target_node_id&#124;var_name | 6&#124;node_id | // |
 
-Following is the various instructions and the protocol that Arbiter-Client communication will follow:
+### Server-Client communication:
 
 | Request Purpose | Message ID  | Request Syntax | Response Syntax | Error Response |
 | --------------  | ----------- | ------------   | --------------- |--------------- |
@@ -47,3 +47,7 @@ Following is the various instructions and the protocol that Arbiter-Client commu
 | Update Variable Metadata    | 1 | 1&#124;node_id&#124;ser_value | None | // |
 
 
+### Server -> Server Communication:
+
+
+### Server -> MemoryManager Communication:

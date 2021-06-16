@@ -1,9 +1,11 @@
-from .config import *
 from _thread import *
 import socket
 import threading
 import json
-from Shared_Var import Shared_Var
+import sys
+from .Shared_Var import Shared_Var
+from .config import *
+
 
 """
 The client side is the part of the network that requests and subscribes to the network
@@ -25,14 +27,14 @@ class Client:
         self.listen_sock = None
         self.write_lock = threading.Lock()   
         self._node_id = self.subscribe()
-        self.metadata = self.get_all_shared_var()
-        self.client_shared_vars = None
-        self.read_replicated_vars = None
+        self.get_all_shared_var()
+        self.client_shared_vars = {}
+        self.read_replicated_vars = {}
         self.listen_thread = threading.Thread(target=self.__listen)
 
     def subscribe(self):
         self.client_sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        server_addr = (IP,SERVER_PORT)
+        server_addr = (IP,ARBITER_PORT)
         try:
             self.client_sock.connect(server_addr)
         except socket.error as e:
@@ -40,22 +42,21 @@ class Client:
             
         self.__send_message(str.encode(self.__create_message(0)))
 
-        recv_data = self.client_sock.recv(1024)
+        recv_data = self.client_sock.recv(BUFFER_SIZE)
 
         if not recv_data:
            print("Unable to connect")
 
         
-        node_id = self.__parse_response(response)
+        node_id = self.__parse_response(recv_data)
         return node_id
 
     def __threaded_client_listen(self,server_conn):
         while True:
-            request = server_conn.recv(4096)
+            request = server_conn.recv(BUFFER_SIZE)
             if not request:
                 break
             self.__parse_incoming_request(request)
-        connection.close()
 
     def __listen(self):
         self.listen_sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -116,13 +117,13 @@ class Client:
             print(request[1])
             del self
         elif msg_type == 0:
-            if self._node_id == int(reponse[1]):
-                self.__halt_read(target_node_id,var_name)
+            if self._node_id == int(request[1]):
+                self.__halt_read(int(request[2]),request[3])
             else:
                 return
         elif msg_type == 1:
-            if self._node_id == int(reponse[1]):
-                self.__update_metadata(response[2])
+            if self._node_id == int(request[1]):
+                self.__update_metadata(request[2])
             else:
                 return
 
@@ -141,7 +142,7 @@ class Client:
         if message_id == 0:
             message = "0"
         elif message_id == 1:
-            message = "1|{}|{}".format(str(args._node_id),json.dump({var_name: var_name,value:value}))
+            message = "1|{}|{}".format(str(args._node_id),json.dumps({'var_name': args['var_name'],'value':args['value']}))
         elif message_id == 2:
             message = "2|{}|{}".format(str(args._node_id),str(args.var_name))
         elif message_id == 3:
@@ -158,25 +159,30 @@ class Client:
         return message
 
     def set_as_shared(self,var_name,value):
-        self.__send_message(self.__create_message(1,{node_id:self._node_id,var_name:var_name,value:value}))
-        recv_data = self.client_sock.recv(1024)
+        self.__send_message(self.__create_message(1,{'node_id':self._node_id,'var_name':var_name,'value':value}))
+        recv_data = self.client_sock.recv(BUFFER_SIZE)
         if not recv_data:
            print("Unable to connect")
 
-        node_id = self.__parse_response(response)
+        node_id = self.__parse_response(recv_data)
         if node_id != None:
-            self.client_shared_vars[var_name] = Shared_Var(var_name,value)
-
+            self.client_shared_vars[var_name] = Shared_Var(var_name,value,self._node_id)
+            return True
+        else:
+            return None
 
     def remove_shared_status(self,var_name):
         self.__send_message(self.__create_message(2,{'node_id':self._node_id,'var_name':var_name}))
-        recv_data = self.client_sock.recv(1024)
+        recv_data = self.client_sock.recv(BUFFER_SIZE)
         if not recv_data:
            print("Unable to connect")
 
         node_id = self.__parse_response(recv_data)
         if node_id != None:
             self.client_shared_vars.pop(var_name)
+            return True
+        else:
+            return False
 
 
     def get_var(self,target_node_id,var_name):
@@ -184,39 +190,43 @@ class Client:
         This method gets a single variable from the ones that have been shared to the 
         server for reading
         """
-        self.__send_message(self.__create_message(3,{node_id:self._node_id,target_node_id:target_node_id,var_name:var_name}))
-        recv_data = self.client_sock.recv(1024)
+        self.__send_message(self.__create_message(3,{'node_id':self._node_id,'target_node_id':target_node_id,'var_name':var_name}))
+        recv_data = self.client_sock.recv(BUFFER_SIZE)
         if not recv_data:
            print("Unable to connect")
+           return False
 
-        var_value = self.__parse_response(response)
+        var_value = self.__parse_response(recv_data)
         if var_name in var_value:
-            self.read_replicated_vars.target_node_id[var_name]  = Shared_Var(var_name,var_value)
-
+            self.read_replicated_vars[str(target_node_id)][var_name]  = Shared_Var(var_name,var_value,target_node_id)
+            return True
+        else:
+            return False
 
     def get_write_access(self,shared_var):
         """
         This method gets the variable from the server to allow the node to be able to 
         change it for at the server level
         """
-        self.__send_message(self.__create_message(5,{node_id:self._node_id,target_node_id:target_node_id,var_name:var_name}))
+        self.__send_message(self.__create_message(5,{'node_id':self._node_id,'target_node_id':shared_var.node_id,'var_name':shared_var.var_name}))
+        recv_data = None
         while not recv_data:
-            recv_data = self.client_sock.recv(1024)
+            recv_data = self.client_sock.recv(BUFFER_SIZE)
 
-        node_id = self.__parse_response(response)
+        node_id = self.__parse_response(recv_data)
         if node_id != None:
-            self.read_replicated_vars.target_node_id[var_name].set_can_write(self._node_id,True)
+            self.read_replicated_vars[str(shared_var.target_node_id)][shared_var.var_name].set_can_write(self._node_id,True)
 
 
     def revoke_write_access(self,shared_var):
-        self.__send_message(self.__create_message(6,{node_id:self._node_id,target_node_id:target_node_id,var_name:var_name}))
-        recv_data = self.client_sock.recv(1024)
+        self.__send_message(self.__create_message(6,{'node_id':self._node_id,'target_node_id':shared_var.node_id,'var_name':shared_var.var_name}))
+        recv_data = self.client_sock.recv(BUFFER_SIZE)
         if not recv_data:
            print("Unable to connect")
 
-        node_id = self.__parse_response(response)
+        node_id = self.__parse_response(recv_data)
         if node_id != None:
-            self.read_replicated_vars.target_node_id[var_name].set_can_write(self._node_id,False)
+            self.read_replicated_vars[str(shared_var.node_id)][shared_var.var_name].set_can_write(self._node_id,False)
 
 
 
@@ -225,11 +235,12 @@ class Client:
         """
 
         """
-        self.__send_message(str.encode(self.__create_message(4,args={node_id:self._node_id})))
-        recv_data = self.client_sock.recv(4096)
+        self.__send_message(str.encode(self.__create_message(4,args={'node_id':self._node_id})))
+        recv_data = self.client_sock.recv(BUFFER_SIZE)
 
         if not recv_data:
            print("Unable to connect")
+           return False
 
         
         self.metadata = self.__parse_response(recv_data)
@@ -239,10 +250,11 @@ class Client:
         """
         Checks the memory manager to make sure that the variable has read access
         """
-        self.__send_message(self.__create_message(5,{node_id:self._node_id,target_node_id:target_node_id,var_name:var_name}))
+        self.__send_message(self.__create_message(5,{'node_id':self._node_id,'target_node_id':shared_var.node_id,'var_name':shared_var.var_name}))
+        recv_data = None
         while not recv_data:
-            recv_data = self.client_sock.recv(1024)
+            recv_data = self.client_sock.recv(BUFFER_SIZE)
 
-        is_avail = self.__parse_response(response)
+        is_avail = self.__parse_response(recv_data)
         if is_avail != None:
             return is_avail
