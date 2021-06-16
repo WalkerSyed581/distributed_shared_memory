@@ -4,8 +4,8 @@ import threading
 import json
 import sys
 import random
-from .Shared_Var import Shared_Var
-from .config import *
+from Shared_Var import Shared_Var
+from config import *
 
 """
 The clients will communicate with the arbiter which will be the bottleneck in the communication
@@ -28,7 +28,10 @@ class Arbiter:
         self.possible_new_clients = []
         self.write_lock = threading.Lock()
         self.client_listen_thread = threading.Thread(target=self.__listen_client)
-        self.server_listen_thread = threading.Thread(target=self.__listen_server)
+        self.client_listen_thread.start()
+        # self.server_listen_thread = threading.Thread(target=self.__listen_server)
+        # self.server_listen_thread.start()
+
 
     def __listen_client(self):
         """
@@ -36,7 +39,7 @@ class Arbiter:
         """
         self.client_listen_sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         try:
-            self.client_listen_sock.bind(IP,ARBITER_PORT)
+            self.client_listen_sock.bind((IP,ARBITER_CLIENT_PORT))
         except socket.error as e:
             print(str(e))
 
@@ -47,11 +50,12 @@ class Arbiter:
             start_new_thread(self.__threaded_client_listen,(client,address ))
 
     def __threaded_client_listen(self,client_conn,client_address):
-        while True:
+        request = None
+        while not request:
             request = client_conn.recv(BUFFER_SIZE)
             if not request:
                 break
-            if not self.__parse_incoming_client_request(request,client_address):
+            if not self.__parse_incoming_client_request(client_conn,request,client_address):
                 self.send_request_to_client("-1|Unable to send request to server",client_address)
 
     def __listen_server(self):
@@ -60,7 +64,7 @@ class Arbiter:
         """
         self.server_listen_sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         try:
-            self.server_listen_sock.bind(IP,ARBITER_PORT)
+            self.server_listen_sock.bind((IP,ARBITER_SERVER_PORT))
         except socket.error as e:
             print(str(e))
 
@@ -81,15 +85,12 @@ class Arbiter:
 
    
     # Basic Communication Methods
-    def send_request_to_client(self,request,address):
+    def send_request_to_client(self,request,client_conn,address):
         """
         docstring
         """
-        new_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         try:
-            new_socket.connect(address)
-            new_socket.send(str.encode(request))
-            new_socket.close()
+            client_conn.send(str.encode(request))
             return True
         except socket.error as e:
             print(str(e))
@@ -139,31 +140,34 @@ class Arbiter:
         """
         pass
 
-    def __parse_incoming_client_request(self,request,client_address):
+    def __parse_incoming_client_request(self,client_conn,request,client_address):
         """
         docstring
         """
-        request = str.decode(request)
-        request = str.split('|')
+        request = request.decode('utf-8')
+        request = request.split('|')
         msg_type = int(request[0])
         if msg_type == 0:
             self.write_lock.acquire()
             self.possible_new_clients.append(client_address)
-            if not self.send_request_to_server('|'.join(request)):
-                print("Unable to send request to the server")
+            request.append(str(len(self.connected_clients) + 1))
+            if not self.send_request_to_client('|'.join(request),client_conn,client_address):
+                print("Unable tosend request to the server")
                 return False
+            client_conn.close()
+            self.connected_clients[str(len(self.connected_clients) + 1)] = client_address
             self.write_lock.release()            
         else:
             self.send_request_to_server('|'.join(request))
-
+        return True
 
         
     def __parse_incoming_server_request(self,request):
         """
         docstring
         """
-        request = str.decode(request)
-        request = str.split('|')
+        request = request.decode('utf-8')
+        request = request.split('|')
         msg_type = int(request[0])
         if msg_type == -1:
             self.write_lock.acquire()
@@ -202,3 +206,6 @@ class Arbiter:
             else:
                 print("Unable to send request to the client")
                 return False
+
+if __name__ == "__main__":
+    my_arbiter = Arbiter()

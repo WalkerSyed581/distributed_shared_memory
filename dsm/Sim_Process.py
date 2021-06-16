@@ -9,7 +9,7 @@ import string
 
 from varname import varname, nameof
 
-from ..Client import Client
+from Client import Client
 
 class Sim_Process:
     def __init__(self,process_id,commands):

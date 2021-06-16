@@ -1,4 +1,4 @@
-from .Sim_Process import Sim_Process
+from Sim_Process import Sim_Process
 
 # from varname import varname, nameof
 

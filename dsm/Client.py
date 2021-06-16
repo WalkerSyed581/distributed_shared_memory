@@ -3,8 +3,9 @@ import socket
 import threading
 import json
 import sys
-from .Shared_Var import Shared_Var
-from .config import *
+from Shared_Var import Shared_Var
+import time
+from config import *
 
 
 """
@@ -27,23 +28,27 @@ class Client:
         self.listen_sock = None
         self.write_lock = threading.Lock()   
         self._node_id = self.subscribe()
+        print("The id received is: ",self._node_id)
+        time.sleep(100)
         self.get_all_shared_var()
         self.client_shared_vars = {}
         self.read_replicated_vars = {}
         self.listen_thread = threading.Thread(target=self.__listen)
+        self.listen_thread.start()
 
     def subscribe(self):
         self.client_sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        server_addr = (IP,ARBITER_PORT)
+        server_addr = (IP,ARBITER_CLIENT_PORT)
         try:
             self.client_sock.connect(server_addr)
         except socket.error as e:
             print(str(e))
             
         self.__send_message(str.encode(self.__create_message(0)))
-
+        recv_data = None
         recv_data = self.client_sock.recv(BUFFER_SIZE)
 
+        print(recv_data)
         if not recv_data:
            print("Unable to connect")
 
@@ -61,11 +66,11 @@ class Client:
     def __listen(self):
         self.listen_sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         try:
-            self.listen_sock.bind(IP,CLIENT_PORT)
+            self.listen_sock.bind((IP,CLIENT_PORT))
         except socket.error as e:
             print(str(e))
 
-        self.listen_sock.listen(1)
+        self.listen_sock.listen(10)
 
         while True:
             server, address = self.listen_sock.accept()
@@ -75,8 +80,8 @@ class Client:
         self.client_sock.send(encoded_message)
 
     def __parse_response(self,message):
-        response = str.decode(message)
-        response = str.split('|')
+        response = message.decode('utf-8')
+        response = response.split('|')
         msg_type = int(response[0])
         if msg_type == -1:
             print(response[1])
@@ -110,8 +115,8 @@ class Client:
             
 
     def __parse_incoming_request(self,message):
-        request = str.decode(message)
-        request = str.split('|')
+        request = message.decode('utf-8')
+        request = request.split('|')
         msg_type = int(request[0])
         if msg_type == -1:
             print(request[1])
@@ -258,3 +263,6 @@ class Client:
         is_avail = self.__parse_response(recv_data)
         if is_avail != None:
             return is_avail
+
+if __name__ == "__main__":
+    my_client = Client()
